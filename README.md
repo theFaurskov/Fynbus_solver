@@ -1,0 +1,2 @@
+# Fynbus
+Fynbus solution, brute
