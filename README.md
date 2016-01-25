@@ -1,3 +1,5 @@
 # Fynbus
 Fynbus solution, brute
-Homemade
+
+It is a homemade project with
+the potential of giving money
