@@ -1,6 +1,7 @@
 import time
+import json
+import sys
 
-from generator import Generator
 from solution_classes import Combination, Bid, Entrepreneur
 
 n_routes = 13
@@ -126,19 +127,28 @@ def find_combi(a, b, current, highest, performance): #(sorted_bids, combi, curre
 bids = []
 ents = []
 
-gen = Generator(n_routes, m_bidders)
-(genEnt, genBids) = gen.generateAuctionBids()
+# Where to take data from
+if (len(sys.argv) < 2):
+    sys.exit("No filename for data provided in the arguments");
 
-for ent in genEnt:
-    (i,n,q) = ent
-    ents.append(Entrepreneur(n, q, i))
+filename = sys.argv[1]
+data = ""
 
-for bid in genBids:
-    (e,p,r) = bid
+with open(filename, "r") as file_:
+    data = file_.read()
+decoded = json.loads(data)
+
+for ent in decoded["entrepreneurs"]:
+    # Entrepreneuer contructor takes parameters in Name, Quality, Company
+    ents.append(Entrepreneur(ent[1], ent[2], ent [0]))
+
+for bid in decoded["bids"]:
+    
     packs = []
-    for i in r:
+    for i in bid[2]:
         packs.append(i+1)
-    bids.append(Bid(str(e), packs, p, e))
+    # Entrepreneuer contructor takes parameters in Identity, Package, Price, Company
+    bids.append(Bid(str(bid[0]), packs, bid[1], bid[0]))
 
 start = time.time()
 
@@ -171,3 +181,6 @@ print sorted_bids
 #    print i
 print "Best: " + str(combi_list[0])
 print "Time: " + str(spend)
+
+with open("result.txt", "w") as file_:
+    file_.write(str(combi_list[0]))

@@ -1,4 +1,5 @@
 import random
+import json
 
 class Generator:  # Script for generating examples of bids for FynBus combinatorial
 
@@ -92,8 +93,17 @@ class Generator:  # Script for generating examples of bids for FynBus combinator
             (entrepreneur, bids) = self.generateEntrepreneurBids(i, cost_structure)
             entrepreneur_sequence.append(entrepreneur)
             bid_sequence.extend(bids)
+
+        data = {"entrepreneurs" : [(e[0], e[1], e[2]) for e in entrepreneur_sequence],
+                "bids" : [(e[0], e[1], e[2]) for e in bid_sequence]}
+        encoded = json.dumps(data)
+        with open("data.txt", "w") as file_:
+            file_.write(encoded)
+
         return (entrepreneur_sequence, bid_sequence)
 
+gen = Generator(13, 5)
+gen.generateAuctionBids()
 
 """# Script entry point:
 
