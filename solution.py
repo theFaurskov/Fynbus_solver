@@ -115,8 +115,6 @@ def find_combi(a, b, current, highest, performance): #(sorted_bids, combi, curre
                     find_combi(a, b, current + 1, highest, performance)
                     del b[-1]
                     performance -= a[current][i].pindex * len(a[current][i].pack)
-                else:
-                    find_combi(a, b, current + 1, highest, performance) #Call the next bidlist and repeat
         else:
             find_combi(a, b, current + 1, highest, performance) #Call the next bidlist
     else:
