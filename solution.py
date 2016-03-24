@@ -177,8 +177,14 @@ spend = end-start
 print sorted_bids
 #for i in combi_list:
 #    print i
-print "Best: " + str(combi_list[0])
 print "Time: " + str(spend)
 
 with open("result.txt", "w") as file_:
-    file_.write(str(combi_list[0]))
+    best = []
+    for i in xrange(len(combi_list)):
+        if combi_list[i].pindex != combi_list[i+1].pindex:
+            for n in xrange(i+1):
+                best.append(combi_list[n])
+                print "Best: " + str(combi_list[n])
+            file_.write(str(best))
+            break
