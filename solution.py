@@ -185,16 +185,28 @@ repeated_bids(bids)
 
 highest = find_highest(bids)
 
-sorted_bids = sort_bids_list(bids, highest) 
+sorted_bids = sort_bids_list(bids, highest)
+
+split_time_begin = time.time()
 
 jobs = split_find_combi(sorted_bids=sorted_bids, highest=highest, n=job_parts, srv=job_server)
 
-job_server.wait()
+split_time_end = time.time()
+
+job_server.print_stats()
+
+print "Split time: " + str(split_time_end-split_time_begin)
 
 combi_list = []
 
+job_time_begin = time.time()
+
 for job in jobs:
+    job_time_begin = time.time()
     combi_list += job()
+    print "Job time: " + str(time.time()-job_time_begin)
+
+print "Job time: " + str(time.time()-job_time_begin)
 
 combi_list.sort(key=lambda x: x.pindex, reverse=True)
 
