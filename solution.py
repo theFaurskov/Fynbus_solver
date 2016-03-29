@@ -127,7 +127,7 @@ def split_find_combi(sorted_bids, highest, combi=[], current=0, performance=0, j
                     l = 0
                     for h in combi:
                         l += len(h.pack)
-                    if l < highest/5.0:
+                    if l < 2+(highest/10.0):
                         split_find_combi(sorted_bids, highest, combi[:], current+1, performance, jobs, n, srv)
                     else:
                         jobs.append(srv.submit(find_combi, args=(sorted_bids, combi[:], current + 1, highest, performance), depfuncs=(not_full, Combination, Bid)))
@@ -142,7 +142,7 @@ def split_find_combi(sorted_bids, highest, combi=[], current=0, performance=0, j
             l = 0
             for h in combi:
                 l += len(h.pack)
-            if l < highest/5.0:
+            if l < 2+(highest/10.0):
                 split_find_combi(sorted_bids, highest, combi[:], current+1, performance, jobs, n, srv)
             else:
                 jobs.append(srv.submit(find_combi, args=(sorted_bids, combi[:], current + 1, highest, performance), depfuncs=(not_full, Combination, Bid)))
