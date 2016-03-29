@@ -124,7 +124,13 @@ def split_find_combi(sorted_bids, highest, combi=[], current=0, performance=0, j
                 if n:
                     split_find_combi(sorted_bids, highest, combi[:], current+1, performance, jobs, n-1, srv)
                 else:
-                    jobs.append(srv.submit(find_combi, args=(sorted_bids, combi[:], current + 1, highest, performance), depfuncs=(not_full, Combination, Bid)))
+                    l = 0
+                    for h in combi:
+                        l += len(h.pack)
+                    if l < highest/5.0:
+                        split_find_combi(sorted_bids, highest, combi[:], current+1, performance, jobs, n, srv)
+                    else:
+                        jobs.append(srv.submit(find_combi, args=(sorted_bids, combi[:], current + 1, highest, performance), depfuncs=(not_full, Combination, Bid)))
                 del combi[-1]
                 performance -= sorted_bids[current][i].pindex * len(sorted_bids[current][i].pack)
         if current == 0:
@@ -133,7 +139,13 @@ def split_find_combi(sorted_bids, highest, combi=[], current=0, performance=0, j
         if n:
             split_find_combi(sorted_bids, highest, combi[:], current+1, performance, jobs, n-1, srv)
         else:
-            jobs.append(srv.submit(find_combi, args=(sorted_bids, combi[:], current + 1, highest, performance), depfuncs=(not_full, Combination, Bid))) #Call the next bidlist
+            l = 0
+            for h in combi:
+                l += len(h.pack)
+            if l < highest/5.0:
+                split_find_combi(sorted_bids, highest, combi[:], current+1, performance, jobs, n, srv)
+            else:
+                jobs.append(srv.submit(find_combi, args=(sorted_bids, combi[:], current + 1, highest, performance), depfuncs=(not_full, Combination, Bid)))
 
 ppservers=("*",)
 
@@ -191,6 +203,8 @@ split_time_begin = time.time()
 
 jobs = split_find_combi(sorted_bids=sorted_bids, highest=highest, n=job_parts, srv=job_server)
 
+#combi_list = find_combi(sorted_bids, [], 0, highest, 0)
+
 split_time_end = time.time()
 
 job_server.print_stats()
@@ -200,15 +214,30 @@ print "Split time: " + str(split_time_end-split_time_begin)
 combi_list = []
 
 job_time_begin = time.time()
+print "Number of jobs: " + str(len(jobs))
 
-for job in jobs:
-    job_time_begin = time.time()
-    combi_list += job()
-    print "Job time: " + str(time.time()-job_time_begin)
+for u in xrange(len(jobs)):
+    print "Job: " + str(u)
+    temp = jobs[u]()
+    temp.sort(key=lambda x: x.pindex, reverse=True)
+    best = []
+    if len(temp) > 2:
+        for i in xrange(len(temp)):
+            if temp[i].pindex != temp[i+1].pindex:
+                for n in xrange(i+1):
+                    best.append(temp[n])
+                break
+        combi_list += best
+    else:
+        combi_list += temp
 
 print "Job time: " + str(time.time()-job_time_begin)
 
+sorttime = time.time()
+
 combi_list.sort(key=lambda x: x.pindex, reverse=True)
+
+print "Sorting time: " + str(time.time()-sorttime)
 
 end = time.time()
 
@@ -220,6 +249,7 @@ job_server.print_stats()
 #for i in combi_list:
 #    print i
 print "Time: " + str(spend)
+print len(combi_list)
 
 with open("result.txt", "w") as file_:
     best = []
