@@ -5,8 +5,6 @@ import pp
 
 from solution_classes import Combination, Bid, Entrepreneur
 
-job_parts = 2
-
 #Gives each bid their quality from their respective entrepreneur
 def quality_check(a,b):  #(bids, ents)
     for i in a:
@@ -59,6 +57,28 @@ def repeated_bids(a):
                 i += 1
         r += 1
 
+#Creates a dictionary with the pindex of the single pack bids
+def single_packs(a):
+    d = dict()
+    for i in a:
+        if len(i.pack) == 1:
+            d[i.pack[0]] = i.pindex
+    return d
+            
+# Removes combination bids if combinations of single bids is better
+def is_single_best(a, b):
+    i = 0
+    while i < len(a):
+        perf = 0
+        for n in a[i].pack:
+            perf += b[n]
+        perf /= len(a[i].pack)
+        if perf > a[i].pindex:
+            del a[i]
+        else:
+            i += 1
+
+
 #Finds the number of packages
 def find_highest(a):
     highest = 0
@@ -88,8 +108,7 @@ def sort_bids_list(a, highest):
 def not_full(a, b): #(combi,current_bid.pack)
     c = []
     for x in a:
-        for r in x.pack:
-            c.append(r)
+        c += x.pack
     for t in b:
         if t in c:
             return False
@@ -107,6 +126,10 @@ def find_combi(sorted_bids, combi, current, highest, performance): #(sorted_bids
                     combinas += find_combi(sorted_bids, combi[:], current + 1, highest, performance)
                     del combi[-1]
                     performance -= sorted_bids[current][i].pindex * len(sorted_bids[current][i].pack)
+            combinas.sort(key=lambda x: x.pindex, reverse=True)
+            for i in xrange(len(combinas)-1):
+                if combinas[i].pindex != combinas[i+1].pindex:
+                    return combinas[:i+1]
             return combinas
         else:
             return find_combi(sorted_bids, combi[:], current + 1, highest, performance)
@@ -127,7 +150,8 @@ def split_find_combi(sorted_bids, highest, combi=[], current=0, performance=0, j
                     l = 0
                     for h in combi:
                         l += len(h.pack)
-                    if l < 2+(highest/10.0):
+                    if l < (highest/15.0):
+                    #if l < 3:
                         split_find_combi(sorted_bids, highest, combi[:], current+1, performance, jobs, n, srv)
                     else:
                         jobs.append(srv.submit(find_combi, args=(sorted_bids, combi[:], current + 1, highest, performance), depfuncs=(not_full, Combination, Bid)))
@@ -142,10 +166,24 @@ def split_find_combi(sorted_bids, highest, combi=[], current=0, performance=0, j
             l = 0
             for h in combi:
                 l += len(h.pack)
-            if l < 2+(highest/10.0):
+            if l < (highest/15.0):
+            #if l < 3:
                 split_find_combi(sorted_bids, highest, combi[:], current+1, performance, jobs, n, srv)
             else:
                 jobs.append(srv.submit(find_combi, args=(sorted_bids, combi[:], current + 1, highest, performance), depfuncs=(not_full, Combination, Bid)))
+
+def save_solution(combi_list = [], r="result.txt", w="w"):
+    with open(r, w) as file_:
+        best = []
+        for i in xrange(len(combi_list)-1):
+            if combi_list[i].pindex != combi_list[i+1].pindex:
+                best += combi_list[:i+1]
+                break
+        if not best:
+            best += combi_list
+        file_.write(str(best))
+        return best
+
 
 ppservers=("*",)
 
@@ -193,17 +231,36 @@ print price_list
 
 calculate_performance(bids, price_list)
 
+print "Bids first: " + str(len(bids))
+
 repeated_bids(bids)
+
+single = single_packs(bids)
+
+print single
+
+print "Bids second: " + str(len(bids))
+
+is_single_best(bids, single)
+
+print "Bids third: " + str(len(bids))
 
 highest = find_highest(bids)
 
 sorted_bids = sort_bids_list(bids, highest)
 
+print len(sorted_bids[0])
+
+if highest*10.0 < len(sorted_bids[0])*len(sorted_bids[1]):
+    job_parts = 0
+else:
+    job_parts = 1
+
+print "Job parts: " + str(job_parts)
+
 split_time_begin = time.time()
 
 jobs = split_find_combi(sorted_bids=sorted_bids, highest=highest, n=job_parts, srv=job_server)
-
-#combi_list = find_combi(sorted_bids, [], 0, highest, 0)
 
 split_time_end = time.time()
 
@@ -216,21 +273,12 @@ combi_list = []
 job_time_begin = time.time()
 print "Number of jobs: " + str(len(jobs))
 
-for u in xrange(len(jobs)):
-    print "Job: " + str(u)
-    temp = jobs[u]()
-    temp.sort(key=lambda x: x.pindex, reverse=True)
-    best = []
-    if len(temp) > 2:
-        for i in xrange(len(temp)):
-            if temp[i].pindex != temp[i+1].pindex:
-                for n in xrange(i+1):
-                    best.append(temp[n])
-                break
-        combi_list += best
-    else:
-        combi_list += temp
-
+for job in jobs:
+    job_time = time.time()
+    #print "Job: " + str(job)
+    combi_list += job()
+    print "Job time: " + str(time.time()-job_time)
+    
 print "Job time: " + str(time.time()-job_time_begin)
 
 sorttime = time.time()
@@ -245,18 +293,10 @@ spend = end-start
 
 job_server.print_stats()
 
-#print sorted_bids
-#for i in combi_list:
-#    print i
 print "Time: " + str(spend)
-print len(combi_list)
+print "Length combi_list: " + str(len(combi_list))
 
-with open("result.txt", "w") as file_:
-    best = []
-    for i in xrange(len(combi_list)):
-        if combi_list[i].pindex != combi_list[i+1].pindex:
-            for n in xrange(i+1):
-                best.append(combi_list[n])
-                print "Best: " + str(combi_list[n])
-            file_.write(str(best))
-            break
+best = save_solution(combi_list)
+
+for i in best:
+    print "Best: " + str(i)
