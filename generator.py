@@ -13,11 +13,14 @@ class Generator:  # Script for generating examples of bids for FynBus combinator
         self.cost_rebate = 0.15  # Lowering of cost in percentage due to economies of scale.
 
         self.combination_force_singles = True  # Can only combine packages having single bids.
-        self.combination_rules = [(3, 3), (1, 5)]  # Sequence of (count,size), i.e. (1,5) means at most 1 combination of 5 packages.
-        self.combination_all = 0.25  # Probability of total offer for all packages (zero if not allowed).
+        self.combination_rules = []
+        for i in xrange(2,int(n_routes*0.3)):
+            self.combination_rules.append((1,i))  # Sequence of (count,size), i.e. (1,5) means at most 1 combination of 5 packages.
+          
+        self.combination_all = 1.0  # Probability of total offer for all packages (zero if not allowed).
 
         self.bidder_range = 0.30  # Variation in bidder's bids in percentage of mean of package.
-        self.bidder_coverage = 0.75  # The percentage of the possible offers being made.
+        self.bidder_coverage = 1.0  # The percentage of the possible offers being made.
 
         self.quality_min = 75
         self.quality_max = 100
@@ -78,7 +81,7 @@ class Generator:  # Script for generating examples of bids for FynBus combinator
                 if (i,) not in routes_covered:
                     combination = (i,)
                     price = pricer(individual_cost_structure[i])
-                    bid_sequence.append((index, price, combination))
+                    bid_sequence.append((index, price+60, combination))
                     routes_covered.update([combination])
         # Sorting:
         bid_sequence = sorted(bid_sequence, cmp=lambda x, y: self.groupSortPredictor(x[2], y[2]))
@@ -102,7 +105,7 @@ class Generator:  # Script for generating examples of bids for FynBus combinator
 
         return (entrepreneur_sequence, bid_sequence)
 
-gen = Generator(13, 5)
+gen = Generator(170,30)
 gen.generateAuctionBids()
 
 """# Script entry point:
