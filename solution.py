@@ -1,7 +1,13 @@
+#! /usr/bin/env python
+#
+#
+
 import time
 import json
 import sys
 import pp
+import os
+import argparse
 
 from solution_classes import Combination, Bid, Entrepreneur
 
@@ -187,10 +193,29 @@ def save_solution(combi_list = [], r="result.txt", w="w"):
 
 ppservers=("*",)
 
-if len(sys.argv) > 1:
-    ncpus = int(sys.argv[1])
+# Parse args
+parser = argparse.ArgumentParser(description='Fynbus solver')
+parser.add_argument('--ncpus', '-n', metavar='N',
+                    type=int, default=0,
+                    help='Number of CPU cores to use (default all)')
+parser.add_argument('--input', '-i', metavar='INPUT',
+                    type=str, default='data.txt',
+                    help='Input file (default: %(default)s)')
+parser.add_argument('--output', '-o', metavar='OUTPUT',
+                    type=str, default=None,
+                    help='Output file (default: input filename appended with .out)')
+args = parser.parse_args()
+
+if not os.path.isfile(args.input):
+    parser.error('Input file not found: %r' % args.input)
+if args.ncpus < 0:
+    parser.error('--ncpus cannot be negative')
+if not args.output:
+    args.output = args.input + '.out'
+
+if args.ncpus:
     # Creates jobserver with ncpus workers
-    job_server = pp.Server(ncpus, ppservers=ppservers)
+    job_server = pp.Server(args.ncpus, ppservers=ppservers)
 else:
     # Creates jobserver with automatically detected number of workers
     job_server = pp.Server(ppservers=ppservers)
@@ -200,10 +225,9 @@ print "Starting pp with", job_server.get_ncpus(), "workers"
 bids = []
 ents = []
 
-filename = "data.txt"
 data = ""
 
-with open(filename, "r") as file_:
+with open(args.input, "r") as file_:
     data = file_.read()
 decoded = json.loads(data)
 
@@ -295,8 +319,11 @@ job_server.print_stats()
 
 print "Time: " + str(spend)
 print "Length combi_list: " + str(len(combi_list))
+print
 
-best = save_solution(combi_list)
+best = save_solution(combi_list, args.output)
+print 'Output saved in', args.output
+print
 
 for i in best:
     print "Best: " + str(i)
