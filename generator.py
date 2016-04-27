@@ -1,12 +1,22 @@
+#! /usr/bin/env python
+#
+# Generate sample input
+#
+
 import random
 import json
+import argparse
+import os
+import time
 
 class Generator:  # Script for generating examples of bids for FynBus combinatorial
 
-    def __init__(self, n_routes, m_bidders):
+    def __init__(self, filename, n_routes, m_bidders, m_bids_per_bidder):
         # Parameters:
+        self.filename = filename
         self.n_routes = n_routes  # Number of packages (of routes) that can be bid on.
         self.m_bidders = m_bidders  # Number of entrepreneurs giving bids.
+        self.m_bids_per_bidder = m_bids_per_bidder # Approx. number of bids per entrepreneur NOT USED!
 
         self.cost_min = 100.00  # Minimum route cost across packages.
         self.cost_max = 400.00  # Maximum route cost across packages.
@@ -100,13 +110,51 @@ class Generator:  # Script for generating examples of bids for FynBus combinator
         data = {"entrepreneurs" : [(e[0], e[1], e[2]) for e in entrepreneur_sequence],
                 "bids" : [(e[0], e[1], e[2]) for e in bid_sequence]}
         encoded = json.dumps(data)
-        with open("data.txt", "w") as file_:
+        with open(self.filename, "w") as file_:
             file_.write(encoded)
 
         return (entrepreneur_sequence, bid_sequence)
 
-gen = Generator(170,30)
+
+# Parse args
+parser = argparse.ArgumentParser(description='Fynbus input generator')
+parser.add_argument('--nroutes', '-r', metavar='N',
+                    type=int, default=10,
+                    help='Number of routes to generate (default %(default)s)')
+parser.add_argument('--nentrep', '-e', metavar='N',
+                    type=int, default=5,
+                    help='Number of entrepreneurs  to generate (default %(default)s)')
+parser.add_argument('--nbids', '-b', metavar='N',
+                    type=int, default=6,
+                    help='Number of bids per entrepreneur (default %(default)s)')
+parser.add_argument('--output', '-o', metavar='OUTPUT',
+                    type=str, default='.',
+                    help='Output file, if OUTPUT is a directory, generate a file OUTPUT/input-N-N-N-TS.txt (default current dir)')
+args = parser.parse_args()
+
+if args.nroutes <= 0:
+    parser.error('--nroutes must be positive')
+if args.nentrep <= 0:
+    parser.error('--nentrep must be positive')
+if args.nbids <= 0:
+    parser.error('--nbids must be positive')
+    
+if not args.output:
+    parser.error('--output MUST be specified')
+if os.path.isdir(args.output):
+    ts = int(time.time() * 10000) % 10000
+    fn = 'input-%d-%d-%d-%d.txt' % (args.nroutes, args.nentrep, args.nbids, ts)
+    args.output = os.path.join(args.output, fn)
+
+print 'Fynbus input generator'
+print
+print '# routes        ', args.nroutes
+print '# entrepreneurs ', args.nentrep
+print '# bids per e.   ', args.nbids
+print 'Output:         ', args.output
+gen = Generator(args.output, args.nroutes, args.nentrep, args.nbids)
 gen.generateAuctionBids()
+print 'Done.'
 
 """# Script entry point:
 
