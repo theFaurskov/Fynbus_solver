@@ -327,3 +327,11 @@ print
 
 for i in best:
     print "Best: " + str(i)
+
+res = (os.path.basename(args.input),)
+res += tuple(args.input.replace('.', '-').split('-')[1:-1])
+res += (len(combi_list), spend)
+print
+print 'RESULT:', '; '.join(map(str, res))
+print
+
