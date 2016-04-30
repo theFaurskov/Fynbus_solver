@@ -43,7 +43,7 @@ def calculate_performance(a, b):
         total = 0
         for p in i.pack:
                 total += b[p]
-        i.pindex = (total*60)/(len(i.pack)*i.price)+i.quality*0.4
+        i.pindex = (total*60.0)/(len(i.pack)*i.price)+i.quality*0.4
 
 #Removes the duplicate of a bid with the lowest performanceindex
 def repeated_bids(a):
